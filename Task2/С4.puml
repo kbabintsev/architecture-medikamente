@@ -1,0 +1,67 @@
+@startuml
+title Диаграмма контейнеров "Медикаменте"
+top to bottom direction
+
+!RELATIVE_INCLUDE ?= "relative/absolute"
+!include ../includes/C4_Container.puml
+
+Person(doctor, "Медицинский специалист", "Осуществляет прием пациентов")
+Person(patient, "Пациент", "Клиент клиники")
+Person(reception, "Сотрудник ресепшена", "Работает на ресепшене")
+Person(cashier, "Кассир", "Проводит оплату")
+Person(accountant, "Бухгалтер", "Занимается процессингом платежей и ведет бухгалтерию")
+Person(storeKeeper, "Сотрудник склада", "Ведeт учёт ТМЦ и закупок оборудования")
+System_Ext(MedicalLab, "Медицинская лаборатория", "Медицинская лаборатория анализов")
+System_Ext(PaymentProvider, "Провайдер платежей", "Внешний провайдер платежей")
+
+Container_Boundary(MedikamenteSystem, "Медикаменте") {
+  Container(ClientPortal, "Портал (клиент)", "React.js", "Веб-портал пациентов")
+  Container(ClientMobile, "Мобильное приложение", "React Native", "Мобильное приложение пациентов")
+  Container(ClientAdmin, "Портал для сотрудников (клиент)", "React.js", "Веб-портал для специалистов компании")
+  Container(ServicePayment, "Платёжный шлюз", "Java Spring Boot", "Платёжный шлюз для интеграции с провайдерами")
+  ContainerDb(DbPayment, "СУБД платежного шлюза", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(ServiceMedicalLab, "Сервис медицинской лаборатории", "Java Spring Boot", "Сервис интеграции с медицинской лабораторией")
+  ContainerDb(DbMedicalLab, "СУБД сервиса медицинской лаборатории", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(CrmPatient, "CRM", "Java Spring Boot", "CRM для сбора данных о клиентах")
+  ContainerDb(DbCrmPatient, "СУБД CRM", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(Kkm, "ККМ", "Software System", "Контрольно-кассовая машина")
+  Container(1cAccountant, "1С Бухгалтерия предприятия", "Software System", "Бухгалтерская система учета")
+  ContainerDb(Db1cAccountant, "СУБД 1С Бухгалтерия предприятия", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(1cStore, "1С Торговля и склад", "Software System", "Складская система учета")
+  ContainerDb(Db1cStore, "СУБД 1С Торговля и склад", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(ServiceJournalDoctor, "Сервис журнала специалиста", "Java Spring Boot", "Сервис интеграции с медицинской лабораторией")
+  ContainerDb(DbJournalDoctor, "СУБД сервиса журнала специалиста", "PostgreSQL", "СУБД с поддержкой шифрования, данные классифицированы и протегированы")
+  Container(ApiGateway, "API Gateway", "Kong", "API Gateway для управления трафиком, безопасности и мониторинга")
+  Container(Iam, "IAM", "Keycloak", "Сервис аутентификации и авторизации с поддержкой RBAC/ABAC, OAuth 2.0, PKCE")
+  Container(ELK, "Система логирования (аудита)", "ELK", "Система сбора, анализа логов (аудит)")
+  Container(Monitoring, "Система мониторинга", "Prometheus", "Система мониторинга и алертинга")
+}
+
+Rel(patient, ClientPortal, "Записывается к специалисту, просматривает и редактирует свою персональную информацию")
+Rel(patient, ClientMobile, "Записывается к специалисту, просматривает и редактирует свою персональную информацию")
+Rel(doctor, ClientAdmin, "Просматривает и редактирует журнал и свою персональную информацию")
+Rel(reception, ClientAdmin, "Просматривает и редактирует журнал")
+Rel(cashier, Kkm, "Принятие оплаты")
+Rel(accountant, 1cAccountant, "Бухгалтерский учет (со встроенной системой аутентификации и авторизации с ролями)")
+Rel(storeKeeper, 1cStore, "Учет ТМЦ (со встроенной системой аутентификации и авторизации с ролями)")
+Rel(Kkm, ServicePayment, "Принятие оплаты", "протокол ККМ")
+Rel(ClientPortal, ApiGateway, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ClientMobile, ApiGateway, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ClientAdmin, ApiGateway, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ApiGateway, Iam, "Авторизация и аутентификация", "HTTPS, TLS 1.3")
+Rel(ApiGateway, CrmPatient, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ApiGateway, ServiceJournalDoctor, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ApiGateway, ServiceMedicalLab, "API-вызовы с аутентификацией и авторизацией", "HTTPS, TLS 1.3")
+Rel(ServiceMedicalLab, MedicalLab, "API-вызовы с ротируемым токеном", "HTTPS, TLS 1.3")
+Rel(ServicePayment, 1cAccountant, "Информация о платежах", "HTTPS, TLS 1.3")
+Rel(ServicePayment, PaymentProvider, "API-вызовы с ротируемым токеном", "HTTPS, TLS 1.3")
+Rel(ApiGateway, ELK, "Логирования вызовов API", "HTTPS, TLS 1.3")
+Rel(ApiGateway, Monitoring, "Мониторинг вызовов API", "HTTPS, TLS 1.3")
+Rel(ServicePayment, DbPayment, "Запись/чтения данных с учетом Data Minimization, при необходимости с обфускацией/маскированием")
+Rel(ServiceMedicalLab, DbMedicalLab, "Запись/чтения данных с учетом Data Minimization, при необходимости с обфускацией/маскированием")
+Rel(CrmPatient, DbCrmPatient, "Запись/чтения данных с учетом Data Minimization, при необходимости с обфускацией/маскированием")
+Rel(1cAccountant, Db1cAccountant, "Запись/чтения данных бухучета")
+Rel(1cStore, Db1cStore, "Запись/чтения данных складского учета")
+Rel(ServiceJournalDoctor, DbJournalDoctor, "Запись/чтения данных с учетом Data Minimization, при необходимости с обфускацией/маскированием")
+
+@enduml
